@@ -6,6 +6,10 @@
       "es2020",
       "dom"
     ],
+    "baseUrl": ".",
+    "paths": {
+      "@services/*": ["./resources/lambda/services/*"]
+    },
     "declaration": true,
     "strict": true,
     "noImplicitAny": true,
@@ -21,7 +25,8 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "typeRoots": [
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "./lib/types"
     ]
   },
   "exclude": [
