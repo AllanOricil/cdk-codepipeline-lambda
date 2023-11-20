@@ -26,7 +26,7 @@
     "strictPropertyInitialization": false,
     "typeRoots": [
       "./node_modules/@types",
-      "./lib/types"
+      "./types"
     ]
   },
   "exclude": [
