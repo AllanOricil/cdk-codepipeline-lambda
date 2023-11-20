@@ -1,32 +1,12 @@
 import { Handler, Context } from 'aws-lambda';
 import { CodeCommitClient, GetFileCommand, GetDifferencesCommand } from "@aws-sdk/client-codecommit";
 import { CodePipelineClient, StartPipelineExecutionCommand } from "@aws-sdk/client-codepipeline";
+import { CodeCommitEvent } from 'types';
 import logger from "@services/logger.mjs";
 import ignore from 'ignore'
 
 const codeCommitClient = new CodeCommitClient({});
 const codePipelineClient = new CodePipelineClient({});
-
-interface CodeCommitRefEventDetail {
-  event: 'referenceCreated' | 'referenceUpdated'
-  referenceType: string
-  commitId: string
-  repositoryName: string
-  referenceName: string
-  referenceFullName: string
-}
-
-interface CodeCommitEvent {
-  version: string
-  id: string
-  'detail-type': string
-  source: string
-  account: string
-  time: string
-  region: string
-  resources: string[]
-  detail: CodeCommitRefEventDetail
-}
 
 export const main: Handler = async function (event: CodeCommitEvent, context: Context) {
   logger.defaultMeta = { requestId: context.awsRequestId };
@@ -54,7 +34,6 @@ export const main: Handler = async function (event: CodeCommitEvent, context: Co
       logger.info('ignore file not present', error)
     }
     
-
     const { differences } = await codeCommitClient.send(
       new GetDifferencesCommand({
         repositoryName: repositoryName,
@@ -73,17 +52,7 @@ export const main: Handler = async function (event: CodeCommitEvent, context: Co
       if(filteredPaths.length){
         await codePipelineClient.send(
           new StartPipelineExecutionCommand({
-            name: `${repositoryName}-docker-image-pipeline`,
-            variables: [
-              {
-                name: 'IMAGE_REPO_NAME',
-                value: repositoryName
-              },
-              {
-                name: 'IMAGE_TAG',
-                value: newCommitId
-              }
-            ]
+            name: `${repositoryName}-docker-image-pipeline`
           })
         )
         logger.info(`${repositoryName}-docker-image-pipeline started`)
