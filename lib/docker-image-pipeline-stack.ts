@@ -1,74 +1,42 @@
-import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as codecommit from 'aws-cdk-lib/aws-codecommit';
 import { Construct } from 'constructs';
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import { DockerImagePipeline } from './docker-image-pipeline';
-import { CodecommitRepository } from './types';
+import { DockerImagePipeline } from './constructs/docker-image-pipeline';
 
 export class DockerImagePipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
 
-    const repositories : Array<CodecommitRepository> = [
+    const dockerImagePipelines = [
       {
-        name: 'test-docker-image-pipeline',
-        arn: 'arn:aws:codecommit:us-east-2:845044614340:test-docker-image-pipeline'
+        codecommitRepository: codecommit.Repository.fromRepositoryArn(
+          this,
+          'test-docker-image-pipeline-codecommit-repository', 
+          'arn:aws:codecommit:us-east-2:845044614340:test-docker-image-pipeline'
+        ),
+        branches: [
+          'main',
+          'develop'
+        ]
       },
       {
-        name: 'test-docker-image-pipeline-2',
-        arn: 'arn:aws:codecommit:us-east-2:845044614340:test-docker-image-pipeline-2'
+        codecommitRepository: codecommit.Repository.fromRepositoryArn(
+          this,
+          'test-docker-image-pipeline2-codecommit-repository',
+          'arn:aws:codecommit:us-east-2:845044614340:test-docker-image-pipeline-2'
+        ),
+        branches: [
+          'main',
+          'develop'
+        ]
       }
     ]
-
-    const dockerImagePipelineTriggerFunction = new NodejsFunction(this, 'docker-image-pipeline-trigger', {
-      functionName: 'docker-image-pipeline-trigger',
-      entry: path.resolve(
-        __dirname,
-        `../resources/lambda/handlers/docker-image-pipeline-trigger/index.ts`,
-      ),
-      handler: "main",
-      runtime: lambda.Runtime.NODEJS_18_X,
-      timeout: cdk.Duration.seconds(60),
-      memorySize: cdk.Size.mebibytes(128).toMebibytes(),
-      retryAttempts: 0,
-      environment: {
-        NODE_ENV: process.env.NODE_ENV ?? "production",
-        LOG_LEVEL: "info",
-      },
-      bundling: {
-        nodeModules: ["winston", "ignore"],
-        externalModules: ["aws-sdk", "@aws-sdk/*"],
-        loader: {
-          ".ts" : "ts"
-        },
-      }
-    });
-
-    const policy = new iam.PolicyStatement({
-      actions: [
-        'codecommit:GetFile',
-        'codecommit:GetDifferences',
-        'codepipeline:StartPipelineExecution'
-      ],
-      resources: ['*'],
-    });
-
-    dockerImagePipelineTriggerFunction.addToRolePolicy(policy);
-
-    const dockerImagePipelines = [];
-    repositories.forEach((repository) => {
-      dockerImagePipelines.push(
-        new DockerImagePipeline(this, repository.name, { 
-          repository: repository,
-          triggerFunction: dockerImagePipelineTriggerFunction
-        })
-      )
-    })
-
     
-
+    dockerImagePipelines.forEach((dockerImagePipeline) => {
+      new DockerImagePipeline(this, `${dockerImagePipeline.codecommitRepository.repositoryName}-docker-image-pipeline`, dockerImagePipeline)
+    })
 
   }
 }
