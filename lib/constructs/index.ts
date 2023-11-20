@@ -1,0 +1,1 @@
+export { DockerImagePipeline } from './docker-image-pipeline'
