@@ -1,0 +1,35 @@
+version: 0.2
+
+env:
+  shell: bash
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws_login_pass=$(aws ecr get-login-password --region $AWS_DEFAULT_REGION)
+      - echo $aws_login_pass | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - |
+        if [[ $CODEBUILD_SOURCE_VERSION == refs/tags/* ]]; then
+          IMAGE_TAG=${CODEBUILD_SOURCE_VERSION#refs/tags/}
+        else
+          IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION
+        fi
+      - |
+        if [[ $CODEBUILD_INITIATOR == codebuild/* ]]; then
+          IMAGE_REPO_NAME=${CODEBUILD_INITIATOR#codebuild/}
+        fi
+      - echo $IMAGE_REPO_NAME:$IMAGE_TAG
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      
