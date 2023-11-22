@@ -1,6 +1,6 @@
-# Codepipeline for Docker Images
+# Codepipeline triggered with Lambda function
 
-This CDK project creates codepipelines to build and push docker images to ECR. A Lambda function controls when a codepipeline is triggered so that is possible to have better control of when pipelines must start.
+This CDK project creates codepipelines that are triggered by a lambda function. A Lambda function controls when a codepipeline is triggered so that is possible to have better control of when pipelines must start.
 
 ![architecture-diagram](./images/codepipeline-docker-images.svg)
 
@@ -9,7 +9,7 @@ This CDK project creates codepipelines to build and push docker images to ECR. A
 
 ```bash
 node		>= 18.18.0
-npm			>= 9.8.1
+npm	      >= 9.8.1
 cdk 		>= 2.102.0
 aws-cli    	>= 2.11.15
 ```
@@ -23,7 +23,7 @@ aws-cli    	>= 2.11.15
 * `cdk synth`       emits the synthesized CloudFormation template
 
 
-## Deploy
+## example: codepipeline that builds a docker image
 
 With the following instructions you will be able to setup a codepipeline to build and deploy docker images when commits are pushed to a codecommit repository.
 
